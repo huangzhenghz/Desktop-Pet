@@ -222,11 +222,7 @@ class DesktopPet(QMainWindow):
         self.bubble_label.setText(text)
         self.bubble_label.adjustSize()
 
-        # 根据宠物的位置设置气泡的位置
-        bubble_width = self.bubble_label.width()
-        bubble_height = self.bubble_label.height()
-
-        self.bubble_label.setGeometry(int(0), int(0), bubble_width, bubble_height)
+        self.bubble_label.move(0,0)
         self.bubble_label.show()
 
         # 设置定时器来隐藏气泡
@@ -235,7 +231,6 @@ class DesktopPet(QMainWindow):
     def hide_bubble(self):
         self.bubble_label.setHidden(True)
         self.bubble_label.hide()
-        self.bubble_label.setStyleSheet("background-color: transparent;")
         self.bubble_label.setText(None)
 
     def mouseDoubleClickEvent(self, event):
@@ -244,14 +239,10 @@ class DesktopPet(QMainWindow):
         if ok and text.strip():
             # 调用get_response函数
             json_response = get_response(text, self.conversation_id, self.parent_message_id)
-            print(json_response)
 
             # 从响应中更新conversation_id和parent_message_id
             self.conversation_id = json_response["conversation_id"]
             self.parent_message_id = json_response["message"]["metadata"]["parent_id"]
-
-            print(self.conversation_id)
-            print(self.parent_message_id)
 
             # 获取回答
             answer = ' '.join(json_response["message"]["content"]["parts"])
