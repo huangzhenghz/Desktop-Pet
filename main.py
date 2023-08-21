@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWid
 from PyQt6.QtGui import QPixmap, QAction
 from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtCore import QPointF
-from PyQt6.QtWidgets import QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QInputDialog
 from PyQt6.QtCore import QEvent
 
 # 导入api_request.py
@@ -66,6 +66,15 @@ class DesktopPet(QMainWindow):
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.animate_action)
         self.animation_timer.start(200)  # 设置为0.2秒，您可以根据需要调整
+
+        # 气泡的初始化
+        self.bubble_label = QLabel(self)
+        self.bubble_label.setWordWrap(True)
+        self.bubble_label.setStyleSheet("background-color: white; border-radius: 10px; padding: 5px; border: 1px solid black;")
+        self.bubble_label.hide()
+
+        self.bubble_timer = QTimer(self)
+        self.bubble_timer.timeout.connect(self.hide_bubble)
 
     def change_action(self):
         # 随机选择一个新的动作，确保新的动作与当前的动作不同
@@ -208,6 +217,27 @@ class DesktopPet(QMainWindow):
                 self.dragPosition = event.globalPosition().toPoint() - self.geometry().topLeft()
                 event.accept()
 
+    def show_bubble(self, text, duration=5000):  # 显示5秒
+        # 设置文本
+        self.bubble_label.setText(text)
+        self.bubble_label.adjustSize()
+
+        # 根据宠物的位置设置气泡的位置
+        bubble_width = self.bubble_label.width()
+        bubble_height = self.bubble_label.height()
+
+        self.bubble_label.setGeometry(int(0), int(0), bubble_width, bubble_height)
+        self.bubble_label.show()
+
+        # 设置定时器来隐藏气泡
+        self.bubble_timer.start(duration)
+
+    def hide_bubble(self):
+        self.bubble_label.setHidden(True)
+        self.bubble_label.hide()
+        self.bubble_label.setStyleSheet("background-color: transparent;")
+        self.bubble_label.setText(None)
+
     def mouseDoubleClickEvent(self, event):
         text, ok = QInputDialog.getText(self, '与宠物交谈', '请输入您的问题：')
 
@@ -229,7 +259,8 @@ class DesktopPet(QMainWindow):
             print(answer)
 
             # 显示回答在对话气泡中
-            QMessageBox.information(self, '宠物回答', answer)
+            # QMessageBox.information(self, '宠物回答', answer)
+            self.show_bubble(answer)
 
 
 if __name__ == '__main__':
