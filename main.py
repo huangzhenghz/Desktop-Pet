@@ -4,6 +4,11 @@ from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWid
 from PyQt6.QtGui import QPixmap, QAction
 from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtCore import QPointF
+from PyQt6.QtWidgets import QInputDialog, QMessageBox
+from PyQt6.QtCore import QEvent
+
+# 导入api_request.py
+from chatgpt import get_response
 
 def distance_between_points(p1, p2):
     return ((p1.x() - p2.x())**2 + (p1.y() - p2.y())**2)**0.5
@@ -48,6 +53,9 @@ class DesktopPet(QMainWindow):
 
         self.current_action_index = 0
         self.current_image_index = 0
+
+        self.conversation_id = None
+        self.parent_message_id = None
 
         # 每5秒更改动作
         self.action_timer = QTimer(self)
@@ -100,7 +108,6 @@ class DesktopPet(QMainWindow):
         self.show()
 
         # 固定窗口大小
-
         # 获取屏幕的设备像素比率
         ratio = self.window().screen().devicePixelRatio()
         # 将逻辑像素转换为物理像素
@@ -193,11 +200,37 @@ class DesktopPet(QMainWindow):
             event.accept()
 
     def mousePressEvent(self, event):
+        if event.type() == QEvent.Type.MouseButtonDblClick:
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             # 检查鼠标位置是否在宠物图像的范围内
             if self.pet_image.geometry().contains(event.pos()):
                 self.dragPosition = event.globalPosition().toPoint() - self.geometry().topLeft()
                 event.accept()
+
+    def mouseDoubleClickEvent(self, event):
+        text, ok = QInputDialog.getText(self, '与宠物交谈', '请输入您的问题：')
+
+        if ok and text.strip():
+            # 调用get_response函数
+            json_response = get_response(text, self.conversation_id, self.parent_message_id)
+            print(json_response)
+
+            # 从响应中更新conversation_id和parent_message_id
+            self.conversation_id = json_response["conversation_id"]
+            self.parent_message_id = json_response["message"]["metadata"]["parent_id"]
+
+            print(self.conversation_id)
+            print(self.parent_message_id)
+
+            # 获取回答
+            answer = ' '.join(json_response["message"]["content"]["parts"])
+
+            print(answer)
+
+            # 显示回答在对话气泡中
+            QMessageBox.information(self, '宠物回答', answer)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
