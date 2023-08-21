@@ -4,7 +4,6 @@ from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWid
 from PyQt6.QtGui import QPixmap, QAction
 from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtCore import QPointF
-from PyQt6.QtGui import QImage
 
 def distance_between_points(p1, p2):
     return ((p1.x() - p2.x())**2 + (p1.y() - p2.y())**2)**0.5
@@ -90,8 +89,6 @@ class DesktopPet(QMainWindow):
 
         # # 加载并显示宠物图片，并进行缩放
         self.pet_image = QLabel(self)
-        # pixmap = QPixmap("image.png").scaled(250, 150, Qt.AspectRatioMode.KeepAspectRatio)  # 修改大小为250x150，保持宽高比
-        # self.pet_image.setPixmap(pixmap)
 
         # 设置布局
         layout = QVBoxLayout()
@@ -100,14 +97,25 @@ class DesktopPet(QMainWindow):
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
-        self.setGeometry(300, 300, 250, 150)
         self.show()
+
+        # 固定窗口大小
+
+        # 获取屏幕的设备像素比率
+        ratio = self.window().screen().devicePixelRatio()
+        # 将逻辑像素转换为物理像素
+        logical_width = 100 * ratio
+        logical_height = 100 * ratio
+        # 使用逻辑像素设置固定大小
+        self.setFixedSize(int(logical_width), int(logical_height))
+
+        # self.setFixedSize(200,200)
 
         # 设置初始位置为随机位置
         self.random_position()
 
         # 开始QTimer
-        self.timer.start(random.randint(10000, 20000))  # 每10-20秒移动一次
+        self.timer.start(random.randint(100000, 200000))  # 每100-200秒移动一次
 
     def set_random_target(self):
         if not self.is_moving:
@@ -156,11 +164,11 @@ class DesktopPet(QMainWindow):
         screen_geometry = QApplication.primaryScreen().geometry()
         x = random.randint(0, screen_geometry.width() - 250)
         y = random.randint(0, screen_geometry.height() - 150)
-        self.setGeometry(x, y, 250, 150)
+        self.move(x, y)
+
 
     def contextMenuEvent(self, event):
-        context_menu = QMenu(self)
-
+        context_menu = QMenu()
         toggle_move_action = QAction("开启/停止移动", self)
         toggle_move_action.triggered.connect(self.toggle_movement)
         context_menu.addAction(toggle_move_action)
@@ -173,7 +181,7 @@ class DesktopPet(QMainWindow):
     def toggle_movement(self):
         self.is_moving = not self.is_moving
         if self.is_moving:
-            self.timer.start(random.randint(10000, 20000))
+            self.timer.start(random.randint(100000, 200000))
         else:
             self.timer.stop()
             self.move_timer.stop()
@@ -186,8 +194,10 @@ class DesktopPet(QMainWindow):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.dragPosition = event.globalPosition().toPoint() - self.geometry().topLeft()
-            event.accept()
+            # 检查鼠标位置是否在宠物图像的范围内
+            if self.pet_image.geometry().contains(event.pos()):
+                self.dragPosition = event.globalPosition().toPoint() - self.geometry().topLeft()
+                event.accept()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
