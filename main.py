@@ -6,6 +6,8 @@ from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtCore import QPointF
 from PyQt6.QtWidgets import QInputDialog
 from PyQt6.QtCore import QEvent
+from PyQt6.QtWidgets import QScrollArea
+
 
 # 导入api_request.py
 from chatgpt import get_response
@@ -68,9 +70,16 @@ class DesktopPet(QMainWindow):
         self.animation_timer.start(200)  # 设置为0.2秒，您可以根据需要调整
 
         # 气泡的初始化
-        self.bubble_label = QLabel(self)
-        self.bubble_label.setWordWrap(True)
-        self.bubble_label.setStyleSheet("background-color: white; border-radius: 10px; padding: 5px; border: 1px solid black;")
+        self.bubble_content = QLabel(self)  # 这是实际显示内容的标签
+        self.bubble_content.setWordWrap(True)
+
+        self.bubble_label = QScrollArea(self)  # 这将成为外部的气泡
+        self.bubble_label.setWidget(self.bubble_content)  # 设置内容标签为滚动区域的内容部件
+        self.bubble_label.setWidgetResizable(True)  # 允许内容部件调整其大小
+        self.bubble_label.setStyleSheet(
+            "background-color: white; border-radius: 10px; padding: 2px;")
+        self.bubble_label.viewport().setStyleSheet("background-color: transparent;")  # 使滚动区域的视口透明，以便看到气泡样式
+        self.bubble_label.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # 移除滚动条
         self.bubble_label.hide()
 
         self.bubble_timer = QTimer(self)
@@ -124,8 +133,6 @@ class DesktopPet(QMainWindow):
         logical_height = 100 * ratio
         # 使用逻辑像素设置固定大小
         self.setFixedSize(int(logical_width), int(logical_height))
-
-        # self.setFixedSize(200,200)
 
         # 设置初始位置为随机位置
         self.random_position()
@@ -219,19 +226,23 @@ class DesktopPet(QMainWindow):
 
     def show_bubble(self, text, duration=5000):  # 显示5秒
         # 设置文本
-        self.bubble_label.setText(text)
-        self.bubble_label.adjustSize()
+        self.bubble_content.setText(text)
+        self.bubble_content.adjustSize()  # 调整标签的大小以适应内容
 
-        self.bubble_label.move(0,0)
+        # 设置宽度和高度
+        width = 200
+        height = self.bubble_content.height()
+        self.bubble_label.setFixedSize(width, height)
+
+        # 根据需要调整位置或其他设置
+        self.bubble_label.move(0, 0)
         self.bubble_label.show()
 
         # 设置定时器来隐藏气泡
         self.bubble_timer.start(duration)
 
     def hide_bubble(self):
-        self.bubble_label.setHidden(True)
         self.bubble_label.hide()
-        self.bubble_label.setText(None)
 
     def mouseDoubleClickEvent(self, event):
         text, ok = QInputDialog.getText(self, '与宠物交谈', '请输入您的问题：')
@@ -248,10 +259,11 @@ class DesktopPet(QMainWindow):
             answer = ' '.join(json_response["message"]["content"]["parts"])
 
             print(answer)
+            print(len(answer))
+            buttle_show_time = int(((len(answer)/7)+1)*1000)
+            print(buttle_show_time)
 
-            # 显示回答在对话气泡中
-            # QMessageBox.information(self, '宠物回答', answer)
-            self.show_bubble(answer)
+            self.show_bubble(answer,duration=buttle_show_time)
 
 
 if __name__ == '__main__':
